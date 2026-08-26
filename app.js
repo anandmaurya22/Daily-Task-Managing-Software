@@ -565,14 +565,17 @@ class TaskFlowApp {
   handleAddTask(e) {
     e.preventDefault();
 
-    const title = this.taskTitle.value.trim();
-    if (!title) return;
+    const title = this.taskTitle ? this.taskTitle.value.trim() : '';
+    if (!title) {
+      this.showToast('Please enter a task title!', 'danger');
+      return;
+    }
 
-    const description = this.taskDesc.value.trim();
+    const description = this.taskDesc ? this.taskDesc.value.trim() : '';
     const priorityRadio = document.querySelector('input[name="priority"]:checked');
     const priority = priorityRadio ? priorityRadio.value : 'Medium';
-    const category = this.taskCategory.value;
-    const dueDate = this.taskDueDate.value;
+    const category = this.taskCategory ? this.taskCategory.value : 'Work';
+    const dueDate = this.taskDueDate ? this.taskDueDate.value : '';
 
     const hour = this.taskAlarmHour ? this.taskAlarmHour.value : '';
     const min = this.taskAlarmMin ? this.taskAlarmMin.value : '00';
@@ -597,9 +600,27 @@ class TaskFlowApp {
     this.tasks.unshift(newTask);
     this.saveTasks();
 
-    // Reset Form
-    this.taskForm.reset();
-    document.querySelector('input[name="priority"][value="Medium"]').checked = true;
+    // Reset Form Safely
+    if (this.taskForm) this.taskForm.reset();
+    const defaultPriority = document.querySelector('input[name="priority"][value="Medium"]');
+    if (defaultPriority) defaultPriority.checked = true;
+
+    // Reset filters to 'all' so new task is immediately visible at the top
+    this.currentFilter = 'all';
+    this.priorityFilter = 'all';
+    this.categoryFilter = 'all';
+    this.searchQuery = '';
+
+    if (this.searchInput) this.searchInput.value = '';
+    if (this.categoryFilterSelect) this.categoryFilterSelect.value = 'all';
+    if (this.priorityFilterSelect) this.priorityFilterSelect.value = 'all';
+
+    if (this.filterTabs) {
+      this.filterTabs.forEach(b => {
+        if (b.dataset.filter === 'all') b.classList.add('active');
+        else b.classList.remove('active');
+      });
+    }
 
     this.showToast('Task added successfully!', 'success');
     this.render();

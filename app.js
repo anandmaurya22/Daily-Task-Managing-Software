@@ -218,6 +218,18 @@ class TaskFlowApp {
     this.quoteText = document.getElementById('quoteText');
     this.quoteAuthor = document.getElementById('quoteAuthor');
     this.toastContainer = document.getElementById('toastContainer');
+
+    // Daily Monitor Elements
+    this.streakCountEl = document.getElementById('streakCount');
+    this.monitorStatusBanner = document.getElementById('monitorStatusBanner');
+    this.bannerIcon = document.getElementById('bannerIcon');
+    this.bannerTitle = document.getElementById('bannerTitle');
+    this.bannerMsg = document.getElementById('bannerMsg');
+    this.checkProgressBtn = document.getElementById('checkProgressBtn');
+    this.monitorTodayProgress = document.getElementById('monitorTodayProgress');
+    this.monitorOverdueCount = document.getElementById('monitorOverdueCount');
+    this.monitorScore = document.getElementById('monitorScore');
+    this.monitorSystemStatus = document.getElementById('monitorSystemStatus');
   }
 
   /* ------------------------------------------------------------------------
@@ -309,6 +321,13 @@ class TaskFlowApp {
     }
     if (this.nameForm) {
       this.nameForm.addEventListener('submit', (e) => this.handleSaveName(e));
+    }
+
+    // Monitor Scan Button
+    if (this.checkProgressBtn) {
+      this.checkProgressBtn.addEventListener('click', () => {
+        this.updateDailyMonitor(true);
+      });
     }
 
     // Keyboard Shortcuts
@@ -559,11 +578,126 @@ class TaskFlowApp {
   }
 
   /* ------------------------------------------------------------------------
-     UI Rendering
+     UI Rendering & Daily Monitoring Engine
      ------------------------------------------------------------------------ */
   render() {
     this.updateStats();
+    this.updateDailyMonitor();
     this.renderTaskList();
+  }
+
+  updateDailyMonitor(manualScan = false) {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Find overdue tasks (due date < today and not completed)
+    const overdueTasks = this.tasks.filter(t => !t.completed && t.dueDate && t.dueDate < todayStr);
+    
+    // Find today's tasks
+    const todayTasks = this.tasks.filter(t => (t.dueDate === todayStr) || (t.createdAt && t.createdAt.startsWith(todayStr)));
+    const todayCompleted = todayTasks.filter(t => t.completed).length;
+
+    // Total counts & Productivity score
+    const totalCount = this.tasks.length;
+    const totalCompleted = this.tasks.filter(t => t.completed).length;
+    const score = totalCount > 0 ? Math.round((totalCompleted / totalCount) * 100) : 100;
+
+    // Update UI Metric Texts
+    if (this.monitorTodayProgress) {
+      this.monitorTodayProgress.textContent = `${todayCompleted} / ${todayTasks.length || 0}`;
+    }
+    if (this.monitorOverdueCount) {
+      this.monitorOverdueCount.textContent = overdueTasks.length;
+    }
+    if (this.monitorScore) {
+      this.monitorScore.textContent = `${score}%`;
+    }
+
+    // Streak Logic
+    let streak = parseInt(localStorage.getItem('taskflow_streak') || '1', 10);
+    const lastActiveDate = localStorage.getItem('taskflow_last_active_date') || '';
+
+    if (totalCompleted > 0 && lastActiveDate !== todayStr) {
+      if (lastActiveDate) {
+        const lastDate = new Date(lastActiveDate);
+        const todayDate = new Date(todayStr);
+        const diffDays = Math.round((todayDate - lastDate) / (1000 * 3600 * 24));
+        if (diffDays === 1) {
+          streak += 1;
+        } else if (diffDays > 1) {
+          streak = 1;
+        }
+      }
+      localStorage.setItem('taskflow_streak', streak);
+      localStorage.setItem('taskflow_last_active_date', todayStr);
+    }
+    if (this.streakCountEl) this.streakCountEl.textContent = streak;
+
+    // Evaluation & Warning Banner Logic
+    if (this.monitorStatusBanner) {
+      this.monitorStatusBanner.classList.remove('alert-warning', 'alert-danger', 'alert-success');
+      
+      if (overdueTasks.length > 0) {
+        // FAIL / FAILURE WARNING CONDITION
+        this.monitorStatusBanner.classList.add('alert-danger');
+        if (this.bannerIcon) this.bannerIcon.textContent = '🚨';
+        if (this.bannerTitle) this.bannerTitle.textContent = 'Productivity Failure Warning!';
+        if (this.bannerMsg) {
+          this.bannerMsg.textContent = `You have ${overdueTasks.length} overdue task(s)! Complete them immediately to prevent streak loss.`;
+        }
+        if (this.monitorSystemStatus) {
+          this.monitorSystemStatus.textContent = 'Action Required 🚨';
+          this.monitorSystemStatus.className = 'status-chip chip-warning';
+        }
+        if (manualScan) {
+          this.showToast(`🚨 System Alert: ${overdueTasks.length} task(s) are overdue!`, 'danger');
+        }
+      } else if (todayTasks.length > 0 && todayCompleted === 0) {
+        // PENDING DAILY GOAL WARNING
+        this.monitorStatusBanner.classList.add('alert-warning');
+        if (this.bannerIcon) this.bannerIcon.textContent = '⚠️';
+        if (this.bannerTitle) this.bannerTitle.textContent = 'Daily Goals Unfulfilled';
+        if (this.bannerMsg) {
+          this.bannerMsg.textContent = `${this.userName}, you haven't completed any of today's tasks yet. Complete your daily targets!`;
+        }
+        if (this.monitorSystemStatus) {
+          this.monitorSystemStatus.textContent = 'Needs Attention ⚠️';
+          this.monitorSystemStatus.className = 'status-chip chip-warning';
+        }
+        if (manualScan) {
+          this.showToast('⚠️ Daily Monitor: Uncompleted tasks pending for today!', 'info');
+        }
+      } else if (totalCount > 0 && totalCompleted === totalCount) {
+        // SUCCESS CONDITION - ALL TASKS COMPLETED
+        this.monitorStatusBanner.classList.add('alert-success');
+        if (this.bannerIcon) this.bannerIcon.textContent = '🎉';
+        if (this.bannerTitle) this.bannerTitle.textContent = 'Perfect Productivity Day!';
+        if (this.bannerMsg) {
+          this.bannerMsg.textContent = `Outstanding job, ${this.userName}! All active tasks and goals are satisfied.`;
+        }
+        if (this.monitorSystemStatus) {
+          this.monitorSystemStatus.textContent = 'Goals Met ✅';
+          this.monitorSystemStatus.className = 'status-chip chip-active';
+        }
+        if (manualScan) {
+          this.showToast('🎉 All goals & tasks satisfied! Streak intact.', 'success');
+        }
+      } else {
+        // NEUTRAL / ON TRACK
+        this.monitorStatusBanner.classList.add('alert-warning');
+        if (this.bannerIcon) this.bannerIcon.textContent = '📊';
+        if (this.bannerTitle) this.bannerTitle.textContent = 'Daily Progress Monitoring Active';
+        if (this.bannerMsg) {
+          this.bannerMsg.textContent = `${this.userName}, the system is monitoring your day-by-day progress. Stay on track!`;
+        }
+        if (this.monitorSystemStatus) {
+          this.monitorSystemStatus.textContent = 'Monitoring Active';
+          this.monitorSystemStatus.className = 'status-chip chip-active';
+        }
+        if (manualScan) {
+          this.showToast('🔍 Automated scan: System monitoring active.', 'info');
+        }
+      }
+    }
   }
 
   updateStats() {

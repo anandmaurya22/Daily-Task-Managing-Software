@@ -62,6 +62,50 @@
       </div>
     </header>
 
+    <!-- Dedicated Daily Progress & Failure Monitor -->
+    <section class="glass-card monitor-card" id="progressMonitorCard">
+      <div class="monitor-header">
+        <div class="monitor-title-wrapper">
+          <div class="monitor-badge-icon" id="monitorBadgeIcon">📊</div>
+          <div>
+            <h2 class="monitor-title">Daily Progress & Failure Monitor</h2>
+            <p class="monitor-subtitle">Automated day-by-day streak tracking & goal failure notifications</p>
+          </div>
+        </div>
+        <div class="streak-pill" id="streakPill" title="Daily Streak">
+          🔥 <span id="streakCount">0</span> Day Streak
+        </div>
+      </div>
+
+      <div class="monitor-status-banner alert-warning" id="monitorStatusBanner">
+        <div class="banner-icon" id="bannerIcon">⚠️</div>
+        <div class="banner-content">
+          <h4 id="bannerTitle">Daily Target Status</h4>
+          <p id="bannerMsg">Checking daily progress...</p>
+        </div>
+        <button class="btn btn-sm btn-outline" id="checkProgressBtn" title="Run manual progress scan">Scan Status</button>
+      </div>
+
+      <div class="monitor-stats-row">
+        <div class="monitor-stat-item">
+          <span class="m-label">Today's Progress</span>
+          <span class="m-value" id="monitorTodayProgress">0 / 0</span>
+        </div>
+        <div class="monitor-stat-item">
+          <span class="m-label">Overdue Tasks</span>
+          <span class="m-value text-danger" id="monitorOverdueCount">0</span>
+        </div>
+        <div class="monitor-stat-item">
+          <span class="m-label">Productivity Score</span>
+          <span class="m-value" id="monitorScore">100%</span>
+        </div>
+        <div class="monitor-stat-item">
+          <span class="m-label">System Status</span>
+          <span class="status-chip chip-active" id="monitorSystemStatus">Monitoring Active</span>
+        </div>
+      </div>
+    </section>
+
     <!-- Statistics Overview Bar -->
     <section class="stats-grid">
       <div class="stat-card glass-card">

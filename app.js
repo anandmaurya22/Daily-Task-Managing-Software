@@ -177,6 +177,8 @@ class TaskFlowApp {
     this.taskCategory = document.getElementById('taskCategory');
     this.taskDueDate = document.getElementById('taskDueDate');
     this.taskAlarmTime = document.getElementById('taskAlarmTime');
+    this.taskAlarmAmpm = document.getElementById('taskAlarmAmpm');
+    this.taskPermanentAlarm = document.getElementById('taskPermanentAlarm');
     this.suggestionChips = document.querySelectorAll('.chip-btn');
 
     // Controls
@@ -207,6 +209,8 @@ class TaskFlowApp {
     this.editTaskCategory = document.getElementById('editTaskCategory');
     this.editTaskDueDate = document.getElementById('editTaskDueDate');
     this.editTaskAlarmTime = document.getElementById('editTaskAlarmTime');
+    this.editTaskAlarmAmpm = document.getElementById('editTaskAlarmAmpm');
+    this.editTaskPermanentAlarm = document.getElementById('editTaskPermanentAlarm');
     this.closeModalBtn = document.getElementById('closeModalBtn');
     this.cancelEditBtn = document.getElementById('cancelEditBtn');
 
@@ -433,34 +437,65 @@ class TaskFlowApp {
     setInterval(updateTime, 1000);
   }
 
+  format12HourTime(rawTimeStr, ampmSelectVal = 'AM') {
+    if (!rawTimeStr) return '';
+    if (rawTimeStr.includes('AM') || rawTimeStr.includes('PM')) {
+      return rawTimeStr;
+    }
+
+    const parts = rawTimeStr.split(':');
+    if (parts.length < 2) return '';
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+
+    let ampm = ampmSelectVal || 'AM';
+    if (hours >= 12) {
+      ampm = 'PM';
+      if (hours > 12) hours -= 12;
+    } else if (hours === 0) {
+      hours = 12;
+      ampm = 'AM';
+    }
+
+    const formattedHours = String(hours).padStart(2, '0');
+    return `${formattedHours}:${minutes} ${ampm}`;
+  }
+
   /* ------------------------------------------------------------------------
      Task Alarm & Audio Reminder Engine
      ------------------------------------------------------------------------ */
   checkTaskAlarms() {
     const now = new Date();
-    const currentHours = String(now.getHours()).padStart(2, '0');
-    const currentMinutes = String(now.getMinutes()).padStart(2, '0');
-    const currentTimeStr = `${currentHours}:${currentMinutes}`;
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = String(hours).padStart(2, '0');
+    const current12HrTimeStr = `${hoursStr}:${minutes} ${ampm}`;
     const todayStr = now.toISOString().split('T')[0];
 
     this.tasks.forEach(task => {
-      if (!task.completed && task.alarmTime && task.alarmTime === currentTimeStr) {
-        const alarmKey = `${todayStr}-${currentTimeStr}`;
-        if (task.lastAlarmTriggeredDate !== alarmKey) {
-          task.lastAlarmTriggeredDate = alarmKey;
-          this.saveTasks();
+      if (!task.completed && task.alarmTime) {
+        if (task.alarmTime === current12HrTimeStr) {
+          const alarmKey = `${todayStr}-${current12HrTimeStr}`;
+          if (task.lastAlarmTriggeredDate !== alarmKey) {
+            task.lastAlarmTriggeredDate = alarmKey;
+            this.saveTasks();
 
-          // Play Audio Chime Sound
-          this.playAlarmSound();
+            // Play Audio Chime Sound
+            this.playAlarmSound();
 
-          // Trigger Alarm Modal & Toast
-          if (this.alarmModalText) {
-            this.alarmModalText.textContent = `It's time for "${task.title}" (${task.alarmTime})!`;
+            // Trigger Alarm Modal & Toast
+            const repeatTag = task.isPermanent ? '🔁 Permanent Daily Alarm' : '🔔 Task Alarm Reminder';
+            if (this.alarmModalText) {
+              this.alarmModalText.textContent = `${repeatTag}: It's time for "${task.title}" (${task.alarmTime})!`;
+            }
+            if (this.alarmModalOverlay) {
+              this.alarmModalOverlay.classList.remove('hidden');
+            }
+            this.showToast(`🔔 ALARM (${task.alarmTime}): Time for "${task.title}"!`, 'info');
           }
-          if (this.alarmModalOverlay) {
-            this.alarmModalOverlay.classList.remove('hidden');
-          }
-          this.showToast(`🔔 ALARM REMINDER: Time for "${task.title}"!`, 'info');
         }
       }
     });
@@ -536,7 +571,11 @@ class TaskFlowApp {
     const priority = priorityRadio ? priorityRadio.value : 'Medium';
     const category = this.taskCategory.value;
     const dueDate = this.taskDueDate.value;
-    const alarmTime = this.taskAlarmTime ? this.taskAlarmTime.value : '';
+
+    const rawAlarm = this.taskAlarmTime ? this.taskAlarmTime.value : '';
+    const ampmVal = this.taskAlarmAmpm ? this.taskAlarmAmpm.value : 'AM';
+    const alarmTime = this.format12HourTime(rawAlarm, ampmVal);
+    const isPermanent = this.taskPermanentAlarm ? this.taskPermanentAlarm.checked : false;
 
     const newTask = {
       id: 'task-' + Date.now(),
@@ -548,6 +587,7 @@ class TaskFlowApp {
       createdAt: new Date().toISOString(),
       dueDate,
       alarmTime,
+      isPermanent,
       lastAlarmTriggeredDate: ''
     };
 
@@ -595,7 +635,21 @@ class TaskFlowApp {
     this.editTaskPriority.value = task.priority;
     this.editTaskCategory.value = task.category || 'Work';
     this.editTaskDueDate.value = task.dueDate || '';
-    if (this.editTaskAlarmTime) this.editTaskAlarmTime.value = task.alarmTime || '';
+
+    if (this.editTaskAlarmTime) {
+      if (task.alarmTime) {
+        const parts = task.alarmTime.split(' ');
+        this.editTaskAlarmTime.value = parts[0] || '';
+        if (this.editTaskAlarmAmpm && parts[1]) {
+          this.editTaskAlarmAmpm.value = parts[1];
+        }
+      } else {
+        this.editTaskAlarmTime.value = '';
+      }
+    }
+    if (this.editTaskPermanentAlarm) {
+      this.editTaskPermanentAlarm.checked = !!task.isPermanent;
+    }
 
     this.editModalOverlay.classList.remove('hidden');
     this.editTaskTitle.focus();
@@ -617,7 +671,11 @@ class TaskFlowApp {
     task.priority = this.editTaskPriority.value;
     task.category = this.editTaskCategory.value;
     task.dueDate = this.editTaskDueDate.value;
-    if (this.editTaskAlarmTime) task.alarmTime = this.editTaskAlarmTime.value;
+
+    const rawAlarm = this.editTaskAlarmTime ? this.editTaskAlarmTime.value : '';
+    const ampmVal = this.editTaskAlarmAmpm ? this.editTaskAlarmAmpm.value : 'AM';
+    task.alarmTime = this.format12HourTime(rawAlarm, ampmVal);
+    task.isPermanent = this.editTaskPermanentAlarm ? this.editTaskPermanentAlarm.checked : false;
 
     this.saveTasks();
     this.closeEditModal();
@@ -882,8 +940,8 @@ class TaskFlowApp {
       let alarmTimeHtml = '';
       if (task.alarmTime) {
         alarmTimeHtml = `
-          <span class="alarm-tag" title="Reminder alarm time">
-            🔔 ${task.alarmTime}
+          <span class="alarm-tag" title="${task.isPermanent ? 'Permanent Daily Recurring Alarm' : '12-Hour Alarm Reminder'}">
+            ${task.isPermanent ? '🔁' : '🔔'} ${task.alarmTime} ${task.isPermanent ? '(Daily)' : ''}
           </span>
         `;
       }

@@ -230,15 +230,28 @@
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row alarm-settings-row">
               <div class="form-group flex-1">
                 <label for="taskDueDate">Due Date</label>
                 <input type="date" id="taskDueDate">
               </div>
               <div class="form-group flex-1">
-                <label for="taskAlarmTime">🔔 Alarm Time (Optional)</label>
-                <input type="time" id="taskAlarmTime" title="Set a reminder alarm time">
+                <label>🔔 Alarm Time (12-Hr)</label>
+                <div class="time-ampm-wrapper">
+                  <input type="time" id="taskAlarmTime" title="Set alarm time">
+                  <select id="taskAlarmAmpm" aria-label="AM or PM">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
+            </div>
+
+            <div class="form-group recurring-alarm-group">
+              <label class="checkbox-label" title="Enable to keep alarm set permanently every day without re-setting">
+                <input type="checkbox" id="taskPermanentAlarm">
+                <span>🔁 Repeat Daily (Permanent Alarm)</span>
+              </label>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
@@ -391,15 +404,28 @@
             </select>
           </div>
         </div>
-        <div class="form-row">
+        <div class="form-row alarm-settings-row">
           <div class="form-group flex-1">
             <label for="editTaskDueDate">Due Date</label>
             <input type="date" id="editTaskDueDate">
           </div>
           <div class="form-group flex-1">
-            <label for="editTaskAlarmTime">🔔 Alarm Time (Optional)</label>
-            <input type="time" id="editTaskAlarmTime" title="Set a reminder alarm time">
+            <label>🔔 Alarm Time (12-Hr)</label>
+            <div class="time-ampm-wrapper">
+              <input type="time" id="editTaskAlarmTime" title="Set alarm time">
+              <select id="editTaskAlarmAmpm" aria-label="AM or PM">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
           </div>
+        </div>
+
+        <div class="form-group recurring-alarm-group">
+          <label class="checkbox-label" title="Enable to keep alarm set permanently every day without re-setting">
+            <input type="checkbox" id="editTaskPermanentAlarm">
+            <span>🔁 Repeat Daily (Permanent Alarm)</span>
+          </label>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" id="cancelEditBtn">Cancel</button>

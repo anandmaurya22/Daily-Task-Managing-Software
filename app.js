@@ -1080,9 +1080,28 @@ class TaskFlowApp {
 
       let alarmTimeHtml = '';
       if (task.alarmTime) {
+        const repeatSvg = task.isPermanent ? `
+          <span class="repeat-pill" title="Recurring Daily Alarm">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="tag-repeat-icon">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            Daily
+          </span>
+        ` : '';
+
         alarmTimeHtml = `
-          <span class="alarm-tag" title="${task.isPermanent ? 'Permanent Daily Recurring Alarm' : '12-Hour Alarm Reminder'}">
-            ${task.isPermanent ? '🔁' : '🔔'} ${task.alarmTime} ${task.isPermanent ? '(Daily)' : ''}
+          <span class="alarm-tag" title="${task.isPermanent ? 'Permanent Daily Recurring Alarm (Click to Edit)' : '12-Hour Alarm Reminder (Click to Edit)'}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="13" r="8"></circle>
+              <polyline points="12 9 12 13 15 15"></polyline>
+              <path d="M5 3L2 6"></path>
+              <path d="M22 6L19 3"></path>
+            </svg>
+            <span>${task.alarmTime}</span>
+            ${repeatSvg}
           </span>
         `;
       }

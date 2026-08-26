@@ -1058,6 +1058,14 @@ class TaskFlowApp {
 }
 
 // Initialize Application when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  window.taskFlowApp = new TaskFlowApp();
-});
+function initTaskFlowApp() {
+  if (!window.taskFlowApp) {
+    window.taskFlowApp = new TaskFlowApp();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTaskFlowApp);
+} else {
+  initTaskFlowApp();
+}

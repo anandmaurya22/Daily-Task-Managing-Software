@@ -254,12 +254,9 @@ class TaskFlowApp {
     // Theme Toggle
     this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
 
-    // Task Submission
+    // Task Submission (Only listen on form submit event to prevent double execution)
     if (this.taskForm) {
       this.taskForm.addEventListener('submit', (e) => this.handleAddTask(e));
-    }
-    if (this.submitBtn) {
-      this.submitBtn.addEventListener('click', (e) => this.handleAddTask(e));
     }
 
     // Search Input

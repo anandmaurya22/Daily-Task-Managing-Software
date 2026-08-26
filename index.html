@@ -236,10 +236,39 @@
                 <input type="date" id="taskDueDate">
               </div>
               <div class="form-group flex-1">
-                <label>🔔 Alarm Time (12-Hr)</label>
-                <div class="time-ampm-wrapper">
-                  <input type="time" id="taskAlarmTime" title="Set alarm time">
-                  <select id="taskAlarmAmpm" aria-label="AM or PM">
+                <label>🔔 Alarm Time (1 to 12 AM/PM)</label>
+                <div class="custom-12hr-picker">
+                  <select id="taskAlarmHour" title="Select Hour (1 to 12)">
+                    <option value="">Hour</option>
+                    <option value="01">01</option>
+                    <option value="02">02</option>
+                    <option value="03">03</option>
+                    <option value="04">04</option>
+                    <option value="05">05</option>
+                    <option value="06">06</option>
+                    <option value="07">07</option>
+                    <option value="08">08</option>
+                    <option value="09">09</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                  </select>
+                  <span class="time-colon">:</span>
+                  <select id="taskAlarmMin" title="Select Minute (00 to 55)">
+                    <option value="00">00</option>
+                    <option value="05">05</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                    <option value="30">30</option>
+                    <option value="35">35</option>
+                    <option value="40">40</option>
+                    <option value="45">45</option>
+                    <option value="50">50</option>
+                    <option value="55">55</option>
+                  </select>
+                  <select id="taskAlarmAmpm" title="Select AM or PM">
                     <option value="AM">AM</option>
                     <option value="PM">PM</option>
                   </select>
@@ -410,10 +439,39 @@
             <input type="date" id="editTaskDueDate">
           </div>
           <div class="form-group flex-1">
-            <label>🔔 Alarm Time (12-Hr)</label>
-            <div class="time-ampm-wrapper">
-              <input type="time" id="editTaskAlarmTime" title="Set alarm time">
-              <select id="editTaskAlarmAmpm" aria-label="AM or PM">
+            <label>🔔 Alarm Time (1 to 12 AM/PM)</label>
+            <div class="custom-12hr-picker">
+              <select id="editTaskAlarmHour" title="Select Hour (1 to 12)">
+                <option value="">Hour</option>
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="08">08</option>
+                <option value="09">09</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+              </select>
+              <span class="time-colon">:</span>
+              <select id="editTaskAlarmMin" title="Select Minute (00 to 55)">
+                <option value="00">00</option>
+                <option value="05">05</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="25">25</option>
+                <option value="30">30</option>
+                <option value="35">35</option>
+                <option value="40">40</option>
+                <option value="45">45</option>
+                <option value="50">50</option>
+                <option value="55">55</option>
+              </select>
+              <select id="editTaskAlarmAmpm" title="Select AM or PM">
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
               </select>

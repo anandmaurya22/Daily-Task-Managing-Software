@@ -176,7 +176,8 @@ class TaskFlowApp {
     this.taskDesc = document.getElementById('taskDesc');
     this.taskCategory = document.getElementById('taskCategory');
     this.taskDueDate = document.getElementById('taskDueDate');
-    this.taskAlarmTime = document.getElementById('taskAlarmTime');
+    this.taskAlarmHour = document.getElementById('taskAlarmHour');
+    this.taskAlarmMin = document.getElementById('taskAlarmMin');
     this.taskAlarmAmpm = document.getElementById('taskAlarmAmpm');
     this.taskPermanentAlarm = document.getElementById('taskPermanentAlarm');
     this.suggestionChips = document.querySelectorAll('.chip-btn');
@@ -208,7 +209,8 @@ class TaskFlowApp {
     this.editTaskPriority = document.getElementById('editTaskPriority');
     this.editTaskCategory = document.getElementById('editTaskCategory');
     this.editTaskDueDate = document.getElementById('editTaskDueDate');
-    this.editTaskAlarmTime = document.getElementById('editTaskAlarmTime');
+    this.editTaskAlarmHour = document.getElementById('editTaskAlarmHour');
+    this.editTaskAlarmMin = document.getElementById('editTaskAlarmMin');
     this.editTaskAlarmAmpm = document.getElementById('editTaskAlarmAmpm');
     this.editTaskPermanentAlarm = document.getElementById('editTaskPermanentAlarm');
     this.closeModalBtn = document.getElementById('closeModalBtn');
@@ -572,9 +574,10 @@ class TaskFlowApp {
     const category = this.taskCategory.value;
     const dueDate = this.taskDueDate.value;
 
-    const rawAlarm = this.taskAlarmTime ? this.taskAlarmTime.value : '';
-    const ampmVal = this.taskAlarmAmpm ? this.taskAlarmAmpm.value : 'AM';
-    const alarmTime = this.format12HourTime(rawAlarm, ampmVal);
+    const hour = this.taskAlarmHour ? this.taskAlarmHour.value : '';
+    const min = this.taskAlarmMin ? this.taskAlarmMin.value : '00';
+    const ampm = this.taskAlarmAmpm ? this.taskAlarmAmpm.value : 'AM';
+    const alarmTime = hour ? `${hour}:${min} ${ampm}` : '';
     const isPermanent = this.taskPermanentAlarm ? this.taskPermanentAlarm.checked : false;
 
     const newTask = {
@@ -636,17 +639,20 @@ class TaskFlowApp {
     this.editTaskCategory.value = task.category || 'Work';
     this.editTaskDueDate.value = task.dueDate || '';
 
-    if (this.editTaskAlarmTime) {
-      if (task.alarmTime) {
-        const parts = task.alarmTime.split(' ');
-        this.editTaskAlarmTime.value = parts[0] || '';
-        if (this.editTaskAlarmAmpm && parts[1]) {
-          this.editTaskAlarmAmpm.value = parts[1];
-        }
-      } else {
-        this.editTaskAlarmTime.value = '';
+    if (task.alarmTime) {
+      const timeParts = task.alarmTime.split(' ');
+      if (timeParts.length >= 2) {
+        const hm = timeParts[0].split(':');
+        if (this.editTaskAlarmHour) this.editTaskAlarmHour.value = hm[0] || '';
+        if (this.editTaskAlarmMin) this.editTaskAlarmMin.value = hm[1] || '00';
+        if (this.editTaskAlarmAmpm) this.editTaskAlarmAmpm.value = timeParts[1] || 'AM';
       }
+    } else {
+      if (this.editTaskAlarmHour) this.editTaskAlarmHour.value = '';
+      if (this.editTaskAlarmMin) this.editTaskAlarmMin.value = '00';
+      if (this.editTaskAlarmAmpm) this.editTaskAlarmAmpm.value = 'AM';
     }
+
     if (this.editTaskPermanentAlarm) {
       this.editTaskPermanentAlarm.checked = !!task.isPermanent;
     }
@@ -672,9 +678,10 @@ class TaskFlowApp {
     task.category = this.editTaskCategory.value;
     task.dueDate = this.editTaskDueDate.value;
 
-    const rawAlarm = this.editTaskAlarmTime ? this.editTaskAlarmTime.value : '';
-    const ampmVal = this.editTaskAlarmAmpm ? this.editTaskAlarmAmpm.value : 'AM';
-    task.alarmTime = this.format12HourTime(rawAlarm, ampmVal);
+    const hour = this.editTaskAlarmHour ? this.editTaskAlarmHour.value : '';
+    const min = this.editTaskAlarmMin ? this.editTaskAlarmMin.value : '00';
+    const ampm = this.editTaskAlarmAmpm ? this.editTaskAlarmAmpm.value : 'AM';
+    task.alarmTime = hour ? `${hour}:${min} ${ampm}` : '';
     task.isPermanent = this.editTaskPermanentAlarm ? this.editTaskPermanentAlarm.checked : false;
 
     this.saveTasks();
@@ -996,6 +1003,14 @@ class TaskFlowApp {
 
       const editBtn = li.querySelector('.edit-btn');
       editBtn.addEventListener('click', () => this.openEditModal(task.id));
+
+      const alarmTag = li.querySelector('.alarm-tag');
+      if (alarmTag) {
+        alarmTag.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openEditModal(task.id);
+        });
+      }
 
       const deleteBtn = li.querySelector('.delete-btn');
       deleteBtn.addEventListener('click', () => this.deleteTask(task.id));

@@ -1304,26 +1304,35 @@ textarea {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
-.time-ampm-wrapper {
+.custom-12hr-picker {
   display: flex;
-  gap: 0.4rem;
   align-items: center;
-}
-
-.time-ampm-wrapper input[type="time"] {
-  flex: 1;
-}
-
-.time-ampm-wrapper select {
-  width: 72px;
-  font-weight: 700;
-  text-align: center;
+  gap: 0.35rem;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  color: var(--primary-accent);
   border-radius: var(--radius-md);
-  padding: 0.5rem 0.2rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.custom-12hr-picker select {
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.25rem 0.1rem;
   cursor: pointer;
+  outline: none;
+}
+
+.custom-12hr-picker select option {
+  background: var(--glass-bg);
+  color: var(--text-main);
+}
+
+.time-colon {
+  font-weight: 800;
+  color: var(--primary-accent);
 }
 
 .recurring-alarm-group {
@@ -1356,10 +1365,19 @@ textarea {
   align-items: center;
   gap: 0.3rem;
   font-weight: 700;
-  background: rgba(99, 102, 241, 0.12);
-  padding: 0.2rem 0.5rem;
+  background: rgba(99, 102, 241, 0.15);
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.alarm-tag:hover {
+  background: var(--primary-accent);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .alarm-modal-card {

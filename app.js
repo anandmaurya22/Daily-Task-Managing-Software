@@ -170,12 +170,14 @@ class TaskFlowApp {
     this.statProgressPct = document.getElementById('statProgressPct');
     this.progressBarFill = document.getElementById('progressBarFill');
 
-    // Task Form
+    // Task Form & Alarm
     this.taskForm = document.getElementById('taskForm');
     this.taskTitle = document.getElementById('taskTitle');
     this.taskDesc = document.getElementById('taskDesc');
     this.taskCategory = document.getElementById('taskCategory');
     this.taskDueDate = document.getElementById('taskDueDate');
+    this.taskAlarmTime = document.getElementById('taskAlarmTime');
+    this.suggestionChips = document.querySelectorAll('.chip-btn');
 
     // Controls
     this.searchInput = document.getElementById('searchInput');
@@ -204,8 +206,14 @@ class TaskFlowApp {
     this.editTaskPriority = document.getElementById('editTaskPriority');
     this.editTaskCategory = document.getElementById('editTaskCategory');
     this.editTaskDueDate = document.getElementById('editTaskDueDate');
+    this.editTaskAlarmTime = document.getElementById('editTaskAlarmTime');
     this.closeModalBtn = document.getElementById('closeModalBtn');
     this.cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    // Alarm Modal
+    this.alarmModalOverlay = document.getElementById('alarmModalOverlay');
+    this.alarmModalText = document.getElementById('alarmModalText');
+    this.dismissAlarmBtn = document.getElementById('dismissAlarmBtn');
 
     // Name Modal
     this.nameModalOverlay = document.getElementById('nameModalOverlay');
@@ -330,11 +338,40 @@ class TaskFlowApp {
       });
     }
 
+    // Quick Suggestion Chips
+    if (this.suggestionChips) {
+      this.suggestionChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          this.taskTitle.value = chip.dataset.title;
+          if (chip.dataset.cat) this.taskCategory.value = chip.dataset.cat;
+          if (chip.dataset.prio) {
+            const prioRadio = document.querySelector(`input[name="priority"][value="${chip.dataset.prio}"]`);
+            if (prioRadio) prioRadio.checked = true;
+          }
+          this.taskTitle.focus();
+          this.showToast(`Selected "${chip.textContent.trim()}"!`, 'info');
+        });
+      });
+    }
+
+    // Alarm Modal Events
+    if (this.dismissAlarmBtn) {
+      this.dismissAlarmBtn.addEventListener('click', () => {
+        if (this.alarmModalOverlay) this.alarmModalOverlay.classList.add('hidden');
+      });
+    }
+    if (this.alarmModalOverlay) {
+      this.alarmModalOverlay.addEventListener('click', (e) => {
+        if (e.target === this.alarmModalOverlay) this.alarmModalOverlay.classList.add('hidden');
+      });
+    }
+
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (!this.editModalOverlay.classList.contains('hidden')) this.closeEditModal();
         if (this.nameModalOverlay && !this.nameModalOverlay.classList.contains('hidden')) this.closeNameModal();
+        if (this.alarmModalOverlay && !this.alarmModalOverlay.classList.contains('hidden')) this.alarmModalOverlay.classList.add('hidden');
       }
     });
   }
@@ -387,10 +424,71 @@ class TaskFlowApp {
       if (this.greetingPrefix) this.greetingPrefix.textContent = prefix;
       if (this.userNameDisplay) this.userNameDisplay.textContent = this.userName;
       if (this.greetingEmoji) this.greetingEmoji.textContent = emoji;
+
+      // Real-time alarm checking
+      this.checkTaskAlarms();
     };
 
     updateTime();
     setInterval(updateTime, 1000);
+  }
+
+  /* ------------------------------------------------------------------------
+     Task Alarm & Audio Reminder Engine
+     ------------------------------------------------------------------------ */
+  checkTaskAlarms() {
+    const now = new Date();
+    const currentHours = String(now.getHours()).padStart(2, '0');
+    const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTimeStr = `${currentHours}:${currentMinutes}`;
+    const todayStr = now.toISOString().split('T')[0];
+
+    this.tasks.forEach(task => {
+      if (!task.completed && task.alarmTime && task.alarmTime === currentTimeStr) {
+        const alarmKey = `${todayStr}-${currentTimeStr}`;
+        if (task.lastAlarmTriggeredDate !== alarmKey) {
+          task.lastAlarmTriggeredDate = alarmKey;
+          this.saveTasks();
+
+          // Play Audio Chime Sound
+          this.playAlarmSound();
+
+          // Trigger Alarm Modal & Toast
+          if (this.alarmModalText) {
+            this.alarmModalText.textContent = `It's time for "${task.title}" (${task.alarmTime})!`;
+          }
+          if (this.alarmModalOverlay) {
+            this.alarmModalOverlay.classList.remove('hidden');
+          }
+          this.showToast(`🔔 ALARM REMINDER: Time for "${task.title}"!`, 'info');
+        }
+      }
+    });
+  }
+
+  playAlarmSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2); // A5
+
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.8);
+    } catch (e) {
+      console.log('Audio Context error or user interaction needed', e);
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -438,6 +536,7 @@ class TaskFlowApp {
     const priority = priorityRadio ? priorityRadio.value : 'Medium';
     const category = this.taskCategory.value;
     const dueDate = this.taskDueDate.value;
+    const alarmTime = this.taskAlarmTime ? this.taskAlarmTime.value : '';
 
     const newTask = {
       id: 'task-' + Date.now(),
@@ -447,7 +546,9 @@ class TaskFlowApp {
       category,
       completed: false,
       createdAt: new Date().toISOString(),
-      dueDate
+      dueDate,
+      alarmTime,
+      lastAlarmTriggeredDate: ''
     };
 
     this.tasks.unshift(newTask);
@@ -494,6 +595,7 @@ class TaskFlowApp {
     this.editTaskPriority.value = task.priority;
     this.editTaskCategory.value = task.category || 'Work';
     this.editTaskDueDate.value = task.dueDate || '';
+    if (this.editTaskAlarmTime) this.editTaskAlarmTime.value = task.alarmTime || '';
 
     this.editModalOverlay.classList.remove('hidden');
     this.editTaskTitle.focus();
@@ -515,6 +617,7 @@ class TaskFlowApp {
     task.priority = this.editTaskPriority.value;
     task.category = this.editTaskCategory.value;
     task.dueDate = this.editTaskDueDate.value;
+    if (this.editTaskAlarmTime) task.alarmTime = this.editTaskAlarmTime.value;
 
     this.saveTasks();
     this.closeEditModal();
@@ -776,6 +879,15 @@ class TaskFlowApp {
         `;
       }
 
+      let alarmTimeHtml = '';
+      if (task.alarmTime) {
+        alarmTimeHtml = `
+          <span class="alarm-tag" title="Reminder alarm time">
+            🔔 ${task.alarmTime}
+          </span>
+        `;
+      }
+
       li.innerHTML = `
         <div class="task-checkbox-container">
           <button class="custom-checkbox" aria-label="Toggle completion" title="${task.completed ? 'Mark incomplete' : 'Mark complete'}">
@@ -800,6 +912,7 @@ class TaskFlowApp {
               ${categoryIcons[task.category] || task.category || 'Task'}
             </span>
             ${dueDateHtml}
+            ${alarmTimeHtml}
           </div>
         </div>
 

@@ -172,6 +172,20 @@
             </svg>
             Add New Task
           </h2>
+          <!-- Quick Activity Suggestion Chips -->
+          <div class="suggestions-wrapper">
+            <label class="suggestions-label">💡 Quick Suggestions (Click to fill)</label>
+            <div class="suggestion-chips" id="suggestionChips">
+              <button type="button" class="chip-btn" data-title="🏃 30-Min Morning Run" data-cat="Health" data-prio="High">🏃 Running</button>
+              <button type="button" class="chip-btn" data-title="🚶 20-Min Evening Walk" data-cat="Health" data-prio="Low">🚶 Walking</button>
+              <button type="button" class="chip-btn" data-title="⚽ Outdoor Football / Badminton Match" data-cat="Game (Physical)" data-prio="Medium">⚽ Sports / Play</button>
+              <button type="button" class="chip-btn" data-title="🎮 Online Multiplayer Gaming Session" data-cat="Game (Online)" data-prio="Medium">🎮 Online Game</button>
+              <button type="button" class="chip-btn" data-title="🧘 10-Min Mindfulness Meditation" data-cat="Health" data-prio="Low">🧘 Meditation</button>
+              <button type="button" class="chip-btn" data-title="💧 Drink 2L Water Target" data-cat="Health" data-prio="Low">💧 Hydration</button>
+              <button type="button" class="chip-btn" data-title="📚 Read 20 Pages of a Book" data-cat="Study" data-prio="Medium">📚 Reading</button>
+            </div>
+          </div>
+
           <form id="taskForm" autocomplete="off">
             <div class="form-group">
               <label for="taskTitle">Task Title <span class="required">*</span></label>
@@ -216,9 +230,15 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="taskDueDate">Due Date</label>
-              <input type="date" id="taskDueDate">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="taskDueDate">Due Date</label>
+                <input type="date" id="taskDueDate">
+              </div>
+              <div class="form-group flex-1">
+                <label for="taskAlarmTime">🔔 Alarm Time (Optional)</label>
+                <input type="time" id="taskAlarmTime" title="Set a reminder alarm time">
+              </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
@@ -371,9 +391,15 @@
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label for="editTaskDueDate">Due Date</label>
-          <input type="date" id="editTaskDueDate">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="editTaskDueDate">Due Date</label>
+            <input type="date" id="editTaskDueDate">
+          </div>
+          <div class="form-group flex-1">
+            <label for="editTaskAlarmTime">🔔 Alarm Time (Optional)</label>
+            <input type="time" id="editTaskAlarmTime" title="Set a reminder alarm time">
+          </div>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" id="cancelEditBtn">Cancel</button>
@@ -400,6 +426,18 @@
           <button type="submit" class="btn btn-primary">Save Name</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Alarm Trigger Notification Modal -->
+  <div class="modal-overlay hidden" id="alarmModalOverlay">
+    <div class="modal-card glass-card alarm-modal-card">
+      <div class="alarm-icon-header">🔔</div>
+      <h3 class="alarm-modal-title">Task Reminder Alarm!</h3>
+      <p class="alarm-modal-desc" id="alarmModalText">It's time for your scheduled task!</p>
+      <div class="modal-actions center-actions">
+        <button type="button" class="btn btn-primary btn-block" id="dismissAlarmBtn">Got it / Dismiss Alarm</button>
+      </div>
     </div>
   </div>
 

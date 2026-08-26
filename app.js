@@ -13,6 +13,7 @@ class TaskFlowApp {
     this.searchQuery = '';
     this.sortBy = 'newest'; // 'newest' | 'oldest' | 'priority' | 'dueDate'
     this.theme = 'dark';
+    this.clockInterval = null;
 
     // Motivational quotes list
     this.quotes = [
@@ -45,7 +46,6 @@ class TaskFlowApp {
     if (savedTheme) {
       this.theme = savedTheme;
     } else {
-      // Check system preference
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       this.theme = prefersDark ? 'dark' : 'light';
     }
@@ -66,7 +66,24 @@ class TaskFlowApp {
     const saved = localStorage.getItem('taskflow_tasks');
     if (saved) {
       try {
-        this.tasks = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.tasks = parsed.map(task => ({
+            id: task.id || ('task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)),
+            title: task.title || 'Untitled Task',
+            description: task.description || '',
+            priority: task.priority || 'Medium',
+            category: task.category || 'Work',
+            completed: !!task.completed,
+            createdAt: task.createdAt || new Date().toISOString(),
+            dueDate: task.dueDate || '',
+            alarmTime: task.alarmTime || '',
+            isPermanent: !!task.isPermanent,
+            lastAlarmTriggeredDate: task.lastAlarmTriggeredDate || ''
+          }));
+        } else {
+          this.tasks = this.getStarterTasks();
+        }
       } catch (e) {
         console.error('Failed to parse tasks from localStorage', e);
         this.tasks = this.getStarterTasks();
@@ -95,7 +112,10 @@ class TaskFlowApp {
         category: 'Work',
         completed: true,
         createdAt: new Date(today.getTime() - 86400000 * 2).toISOString(),
-        dueDate: today.toISOString().split('T')[0]
+        dueDate: today.toISOString().split('T')[0],
+        alarmTime: '',
+        isPermanent: false,
+        lastAlarmTriggeredDate: ''
       },
       {
         id: 'task-2',
@@ -105,7 +125,10 @@ class TaskFlowApp {
         category: 'Work',
         completed: false,
         createdAt: new Date(today.getTime() - 86400000).toISOString(),
-        dueDate: tomorrow.toISOString().split('T')[0]
+        dueDate: tomorrow.toISOString().split('T')[0],
+        alarmTime: '',
+        isPermanent: false,
+        lastAlarmTriggeredDate: ''
       },
       {
         id: 'task-3',
@@ -115,7 +138,10 @@ class TaskFlowApp {
         category: 'Health',
         completed: false,
         createdAt: new Date().toISOString(),
-        dueDate: ''
+        dueDate: '',
+        alarmTime: '06:00 PM',
+        isPermanent: true,
+        lastAlarmTriggeredDate: ''
       },
       {
         id: 'task-4',
@@ -125,7 +151,10 @@ class TaskFlowApp {
         category: 'Study',
         completed: false,
         createdAt: new Date().toISOString(),
-        dueDate: ''
+        dueDate: '',
+        alarmTime: '',
+        isPermanent: false,
+        lastAlarmTriggeredDate: ''
       },
       {
         id: 'task-5',
@@ -135,7 +164,10 @@ class TaskFlowApp {
         category: 'Game (Online)',
         completed: false,
         createdAt: new Date().toISOString(),
-        dueDate: tomorrow.toISOString().split('T')[0]
+        dueDate: tomorrow.toISOString().split('T')[0],
+        alarmTime: '08:30 PM',
+        isPermanent: false,
+        lastAlarmTriggeredDate: ''
       },
       {
         id: 'task-6',
@@ -145,7 +177,10 @@ class TaskFlowApp {
         category: 'Game (Physical)',
         completed: false,
         createdAt: new Date().toISOString(),
-        dueDate: ''
+        dueDate: '',
+        alarmTime: '',
+        isPermanent: false,
+        lastAlarmTriggeredDate: ''
       }
     ];
   }
@@ -252,40 +287,60 @@ class TaskFlowApp {
      ------------------------------------------------------------------------ */
   bindEvents() {
     // Theme Toggle
-    this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+    if (this.themeToggleBtn) {
+      this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+    }
 
-    // Task Submission (Only listen on form submit event to prevent double execution)
+    // Task Form Submission
     if (this.taskForm) {
       this.taskForm.addEventListener('submit', (e) => this.handleAddTask(e));
     }
 
-    // Search Input
-    this.searchInput.addEventListener('input', (e) => {
-      this.searchQuery = e.target.value.trim().toLowerCase();
-      if (this.searchQuery.length > 0) {
-        this.clearSearchBtn.classList.remove('hidden');
-      } else {
-        this.clearSearchBtn.classList.add('hidden');
+    // Quick Add Shortcut (Ctrl+Enter or Cmd+Enter inside input/textarea)
+    const handleQuickSubmit = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        this.handleAddTask(e);
       }
-      this.render();
-    });
+    };
+    if (this.taskTitle) this.taskTitle.addEventListener('keydown', handleQuickSubmit);
+    if (this.taskDesc) this.taskDesc.addEventListener('keydown', handleQuickSubmit);
 
-    this.clearSearchBtn.addEventListener('click', () => {
-      this.searchInput.value = '';
-      this.searchQuery = '';
-      this.clearSearchBtn.classList.add('hidden');
-      this.render();
-    });
-
-    // Filter Tabs
-    this.filterTabs.forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.filterTabs.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.currentFilter = btn.dataset.filter;
+    // Search Input
+    if (this.searchInput) {
+      this.searchInput.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value.trim().toLowerCase();
+        if (this.clearSearchBtn) {
+          if (this.searchQuery.length > 0) {
+            this.clearSearchBtn.classList.remove('hidden');
+          } else {
+            this.clearSearchBtn.classList.add('hidden');
+          }
+        }
         this.render();
       });
-    });
+    }
+
+    if (this.clearSearchBtn) {
+      this.clearSearchBtn.addEventListener('click', () => {
+        if (this.searchInput) this.searchInput.value = '';
+        this.searchQuery = '';
+        this.clearSearchBtn.classList.add('hidden');
+        this.render();
+      });
+    }
+
+    // Filter Tabs
+    if (this.filterTabs) {
+      this.filterTabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          this.filterTabs.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.currentFilter = btn.dataset.filter;
+          this.render();
+        });
+      });
+    }
 
     // Category Dropdown Filter
     if (this.categoryFilterSelect) {
@@ -296,34 +351,58 @@ class TaskFlowApp {
     }
 
     // Priority Dropdown Filter
-    this.priorityFilterSelect.addEventListener('change', (e) => {
-      this.priorityFilter = e.target.value;
-      this.render();
-    });
+    if (this.priorityFilterSelect) {
+      this.priorityFilterSelect.addEventListener('change', (e) => {
+        this.priorityFilter = e.target.value;
+        this.render();
+      });
+    }
 
     // Sort Dropdown
-    this.sortBySelect.addEventListener('change', (e) => {
-      this.sortBy = e.target.value;
-      this.render();
-    });
+    if (this.sortBySelect) {
+      this.sortBySelect.addEventListener('change', (e) => {
+        this.sortBy = e.target.value;
+        this.render();
+      });
+    }
 
     // Clear Completed Tasks
-    this.clearCompletedBtn.addEventListener('click', () => this.handleClearCompleted());
+    if (this.clearCompletedBtn) {
+      this.clearCompletedBtn.addEventListener('click', () => this.handleClearCompleted());
+    }
 
-    // Modal Events
-    this.closeModalBtn.addEventListener('click', () => this.closeEditModal());
-    this.cancelEditBtn.addEventListener('click', () => this.closeEditModal());
-    this.editModalOverlay.addEventListener('click', (e) => {
-      if (e.target === this.editModalOverlay) this.closeEditModal();
-    });
-    this.editTaskForm.addEventListener('submit', (e) => this.handleSaveEdit(e));
+    // Edit Task Modal Events
+    if (this.closeModalBtn) {
+      this.closeModalBtn.addEventListener('click', () => this.closeEditModal());
+    }
+    if (this.cancelEditBtn) {
+      this.cancelEditBtn.addEventListener('click', () => this.closeEditModal());
+    }
+    if (this.editModalOverlay) {
+      this.editModalOverlay.addEventListener('click', (e) => {
+        if (e.target === this.editModalOverlay) this.closeEditModal();
+      });
+    }
+    if (this.editTaskForm) {
+      this.editTaskForm.addEventListener('submit', (e) => this.handleSaveEdit(e));
+    }
 
-    // Name Modal Events
+    // User Name Personalization Modal Events
     if (this.userNameDisplay) {
       this.userNameDisplay.addEventListener('click', () => this.openNameModal());
+      this.userNameDisplay.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.openNameModal();
+        }
+      });
     }
     if (this.editNameBtn) {
-      this.editNameBtn.addEventListener('click', () => this.openNameModal());
+      this.editNameBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openNameModal();
+      });
     }
     if (this.closeNameModalBtn) {
       this.closeNameModalBtn.addEventListener('click', () => this.closeNameModal());
@@ -351,14 +430,20 @@ class TaskFlowApp {
     if (this.suggestionChips) {
       this.suggestionChips.forEach(chip => {
         chip.addEventListener('click', () => {
-          this.taskTitle.value = chip.dataset.title;
-          if (chip.dataset.cat) this.taskCategory.value = chip.dataset.cat;
+          if (this.taskTitle) {
+            this.taskTitle.value = chip.dataset.title || '';
+          }
+          if (this.taskCategory && chip.dataset.cat) {
+            this.taskCategory.value = chip.dataset.cat;
+          }
           if (chip.dataset.prio) {
             const prioRadio = document.querySelector(`input[name="priority"][value="${chip.dataset.prio}"]`);
             if (prioRadio) prioRadio.checked = true;
           }
-          this.taskTitle.focus();
-          this.showToast(`Selected "${chip.textContent.trim()}"!`, 'info');
+          if (this.taskTitle) {
+            this.taskTitle.focus();
+          }
+          this.showToast(`Selected "${chip.textContent.trim()}"! Click "Add Task" to save.`, 'info');
         });
       });
     }
@@ -375,12 +460,18 @@ class TaskFlowApp {
       });
     }
 
-    // Keyboard Shortcuts
+    // Keyboard Shortcuts (Escape to close any open modal)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (!this.editModalOverlay.classList.contains('hidden')) this.closeEditModal();
-        if (this.nameModalOverlay && !this.nameModalOverlay.classList.contains('hidden')) this.closeNameModal();
-        if (this.alarmModalOverlay && !this.alarmModalOverlay.classList.contains('hidden')) this.alarmModalOverlay.classList.add('hidden');
+        if (this.editModalOverlay && !this.editModalOverlay.classList.contains('hidden')) {
+          this.closeEditModal();
+        }
+        if (this.nameModalOverlay && !this.nameModalOverlay.classList.contains('hidden')) {
+          this.closeNameModal();
+        }
+        if (this.alarmModalOverlay && !this.alarmModalOverlay.classList.contains('hidden')) {
+          this.alarmModalOverlay.classList.add('hidden');
+        }
       }
     });
   }
@@ -389,6 +480,10 @@ class TaskFlowApp {
      Clock & Dynamic Time-Based Greeting
      ------------------------------------------------------------------------ */
   startClock() {
+    if (this.clockInterval) {
+      clearInterval(this.clockInterval);
+    }
+
     const updateTime = () => {
       const now = new Date();
 
@@ -439,31 +534,7 @@ class TaskFlowApp {
     };
 
     updateTime();
-    setInterval(updateTime, 1000);
-  }
-
-  format12HourTime(rawTimeStr, ampmSelectVal = 'AM') {
-    if (!rawTimeStr) return '';
-    if (rawTimeStr.includes('AM') || rawTimeStr.includes('PM')) {
-      return rawTimeStr;
-    }
-
-    const parts = rawTimeStr.split(':');
-    if (parts.length < 2) return '';
-    let hours = parseInt(parts[0], 10);
-    const minutes = parts[1];
-
-    let ampm = ampmSelectVal || 'AM';
-    if (hours >= 12) {
-      ampm = 'PM';
-      if (hours > 12) hours -= 12;
-    } else if (hours === 0) {
-      hours = 12;
-      ampm = 'AM';
-    }
-
-    const formattedHours = String(hours).padStart(2, '0');
-    return `${formattedHours}:${minutes} ${ampm}`;
+    this.clockInterval = setInterval(updateTime, 1000);
   }
 
   /* ------------------------------------------------------------------------
@@ -535,25 +606,44 @@ class TaskFlowApp {
      User Name Personalization Modal
      ------------------------------------------------------------------------ */
   openNameModal() {
-    if (this.userNameInput) this.userNameInput.value = this.userName;
-    if (this.nameModalOverlay) this.nameModalOverlay.classList.remove('hidden');
-    if (this.userNameInput) this.userNameInput.focus();
+    if (this.userNameInput) {
+      this.userNameInput.value = this.userName || 'User';
+    }
+    if (this.nameModalOverlay) {
+      this.nameModalOverlay.classList.remove('hidden');
+    }
+    if (this.userNameInput) {
+      setTimeout(() => {
+        this.userNameInput.focus();
+        this.userNameInput.select();
+      }, 50);
+    }
   }
 
   closeNameModal() {
-    if (this.nameModalOverlay) this.nameModalOverlay.classList.add('hidden');
+    if (this.nameModalOverlay) {
+      this.nameModalOverlay.classList.add('hidden');
+    }
   }
 
   handleSaveName(e) {
-    e.preventDefault();
-    const newName = this.userNameInput.value.trim();
-    if (!newName) return;
+    if (e && e.preventDefault) e.preventDefault();
+    const newName = this.userNameInput ? this.userNameInput.value.trim() : '';
+    if (!newName) {
+      this.showToast('Please enter a valid name', 'danger');
+      return;
+    }
 
     this.userName = newName;
     localStorage.setItem('taskflow_user_name', newName);
     this.closeNameModal();
-    this.showToast(`Welcome, ${this.userName}! 🎉`, 'success');
-    this.startClock();
+
+    // Immediately update header and interface
+    if (this.userNameDisplay) {
+      this.userNameDisplay.textContent = this.userName;
+    }
+    this.render();
+    this.showToast(`Welcome, ${this.userName}! 🎉 Profile updated.`, 'success');
   }
 
   renderQuotes() {
@@ -563,14 +653,15 @@ class TaskFlowApp {
   }
 
   /* ------------------------------------------------------------------------
-     Task CRUD Operations
+     Task CRUD Operations (Add, Toggle, Edit, Delete)
      ------------------------------------------------------------------------ */
   handleAddTask(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
 
     const title = this.taskTitle ? this.taskTitle.value.trim() : '';
     if (!title) {
       this.showToast('Please enter a task title!', 'danger');
+      if (this.taskTitle) this.taskTitle.focus();
       return;
     }
 
@@ -587,7 +678,7 @@ class TaskFlowApp {
     const isPermanent = this.taskPermanentAlarm ? this.taskPermanentAlarm.checked : false;
 
     const newTask = {
-      id: 'task-' + Date.now(),
+      id: 'task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
       title,
       description,
       priority,
@@ -625,8 +716,10 @@ class TaskFlowApp {
       });
     }
 
-    this.showToast('Task added successfully!', 'success');
+    this.showToast('Task added successfully! 🚀', 'success');
     this.render();
+
+    if (this.taskTitle) this.taskTitle.focus();
   }
 
   toggleTaskCompletion(id) {
@@ -648,7 +741,8 @@ class TaskFlowApp {
     const deletedTask = this.tasks.splice(taskIndex, 1)[0];
     this.saveTasks();
 
-    this.showToast(`Deleted "${deletedTask.title.substring(0, 20)}..."`, 'danger');
+    const taskTitle = deletedTask && deletedTask.title ? deletedTask.title.substring(0, 20) : 'Task';
+    this.showToast(`Deleted "${taskTitle}..."`, 'danger');
     this.render();
   }
 
@@ -656,12 +750,12 @@ class TaskFlowApp {
     const task = this.tasks.find(t => t.id === id);
     if (!task) return;
 
-    this.editTaskId.value = task.id;
-    this.editTaskTitle.value = task.title;
-    this.editTaskDesc.value = task.description || '';
-    this.editTaskPriority.value = task.priority;
-    this.editTaskCategory.value = task.category || 'Work';
-    this.editTaskDueDate.value = task.dueDate || '';
+    if (this.editTaskId) this.editTaskId.value = task.id;
+    if (this.editTaskTitle) this.editTaskTitle.value = task.title || '';
+    if (this.editTaskDesc) this.editTaskDesc.value = task.description || '';
+    if (this.editTaskPriority) this.editTaskPriority.value = task.priority || 'Medium';
+    if (this.editTaskCategory) this.editTaskCategory.value = task.category || 'Work';
+    if (this.editTaskDueDate) this.editTaskDueDate.value = task.dueDate || '';
 
     if (task.alarmTime) {
       const timeParts = task.alarmTime.split(' ');
@@ -681,26 +775,37 @@ class TaskFlowApp {
       this.editTaskPermanentAlarm.checked = !!task.isPermanent;
     }
 
-    this.editModalOverlay.classList.remove('hidden');
-    this.editTaskTitle.focus();
+    if (this.editModalOverlay) {
+      this.editModalOverlay.classList.remove('hidden');
+    }
+    if (this.editTaskTitle) {
+      setTimeout(() => {
+        this.editTaskTitle.focus();
+        this.editTaskTitle.select();
+      }, 50);
+    }
   }
 
   closeEditModal() {
-    this.editModalOverlay.classList.add('hidden');
-    this.editTaskForm.reset();
+    if (this.editModalOverlay) {
+      this.editModalOverlay.classList.add('hidden');
+    }
+    if (this.editTaskForm) {
+      this.editTaskForm.reset();
+    }
   }
 
   handleSaveEdit(e) {
-    e.preventDefault();
-    const id = this.editTaskId.value;
+    if (e && e.preventDefault) e.preventDefault();
+    const id = this.editTaskId ? this.editTaskId.value : '';
     const task = this.tasks.find(t => t.id === id);
     if (!task) return;
 
-    task.title = this.editTaskTitle.value.trim();
-    task.description = this.editTaskDesc.value.trim();
-    task.priority = this.editTaskPriority.value;
-    task.category = this.editTaskCategory.value;
-    task.dueDate = this.editTaskDueDate.value;
+    task.title = this.editTaskTitle ? this.editTaskTitle.value.trim() : task.title;
+    task.description = this.editTaskDesc ? this.editTaskDesc.value.trim() : '';
+    task.priority = this.editTaskPriority ? this.editTaskPriority.value : 'Medium';
+    task.category = this.editTaskCategory ? this.editTaskCategory.value : 'Work';
+    task.dueDate = this.editTaskDueDate ? this.editTaskDueDate.value : '';
 
     const hour = this.editTaskAlarmHour ? this.editTaskAlarmHour.value : '';
     const min = this.editTaskAlarmMin ? this.editTaskAlarmMin.value : '00';
@@ -710,7 +815,7 @@ class TaskFlowApp {
 
     this.saveTasks();
     this.closeEditModal();
-    this.showToast('Task updated!', 'success');
+    this.showToast('Task updated successfully! ✨', 'success');
     this.render();
   }
 
@@ -744,7 +849,7 @@ class TaskFlowApp {
 
       // Filter by Search Query
       if (this.searchQuery) {
-        const titleMatch = task.title.toLowerCase().includes(this.searchQuery);
+        const titleMatch = task.title && task.title.toLowerCase().includes(this.searchQuery);
         const descMatch = task.description && task.description.toLowerCase().includes(this.searchQuery);
         const catMatch = task.category && task.category.toLowerCase().includes(this.searchQuery);
         if (!titleMatch && !descMatch && !catMatch) return false;
@@ -754,12 +859,14 @@ class TaskFlowApp {
     }).sort((a, b) => {
       // Sorting Logic
       if (this.sortBy === 'newest') {
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       } else if (this.sortBy === 'oldest') {
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
       } else if (this.sortBy === 'priority') {
         const priorityWeight = { High: 3, Medium: 2, Low: 1 };
-        return priorityWeight[b.priority] - priorityWeight[a.priority];
+        const weightA = priorityWeight[a.priority] || 2;
+        const weightB = priorityWeight[b.priority] || 2;
+        return weightB - weightA;
       } else if (this.sortBy === 'dueDate') {
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
@@ -912,28 +1019,31 @@ class TaskFlowApp {
 
   renderTaskList() {
     const filteredTasks = this.getFilteredTasks();
+    if (!this.taskList) return;
     this.taskList.innerHTML = '';
 
     if (filteredTasks.length === 0) {
-      this.emptyState.classList.remove('hidden');
+      if (this.emptyState) this.emptyState.classList.remove('hidden');
 
-      if (this.searchQuery) {
-        this.emptyTitle.textContent = 'No matching tasks found';
-        this.emptyDesc.textContent = `No tasks match "${this.searchQuery}". Try a different term or clear search.`;
-      } else if (this.currentFilter === 'active') {
-        this.emptyTitle.textContent = 'No active tasks';
-        this.emptyDesc.textContent = 'Awesome job! You have completed all active tasks.';
-      } else if (this.currentFilter === 'completed') {
-        this.emptyTitle.textContent = 'No completed tasks yet';
-        this.emptyDesc.textContent = 'Complete tasks to see your history and achievements listed here!';
-      } else {
-        this.emptyTitle.textContent = 'Your task list is empty';
-        this.emptyDesc.textContent = 'Add your first task on the left sidebar to get started!';
+      if (this.emptyTitle && this.emptyDesc) {
+        if (this.searchQuery) {
+          this.emptyTitle.textContent = 'No matching tasks found';
+          this.emptyDesc.textContent = `No tasks match "${this.searchQuery}". Try a different term or clear search.`;
+        } else if (this.currentFilter === 'active') {
+          this.emptyTitle.textContent = 'No active tasks';
+          this.emptyDesc.textContent = 'Awesome job! You have completed all active tasks.';
+        } else if (this.currentFilter === 'completed') {
+          this.emptyTitle.textContent = 'No completed tasks yet';
+          this.emptyDesc.textContent = 'Complete tasks to see your history and achievements listed here!';
+        } else {
+          this.emptyTitle.textContent = 'Your task list is empty';
+          this.emptyDesc.textContent = 'Add your first task on the left sidebar to get started!';
+        }
       }
       return;
     }
 
-    this.emptyState.classList.add('hidden');
+    if (this.emptyState) this.emptyState.classList.add('hidden');
 
     filteredTasks.forEach(task => {
       const li = document.createElement('li');
@@ -977,9 +1087,12 @@ class TaskFlowApp {
         `;
       }
 
+      const prioritySafe = (task.priority || 'Medium').toLowerCase();
+      const categorySafe = categoryIcons[task.category] || task.category || 'Task';
+
       li.innerHTML = `
         <div class="task-checkbox-container">
-          <button class="custom-checkbox" aria-label="Toggle completion" title="${task.completed ? 'Mark incomplete' : 'Mark complete'}">
+          <button type="button" class="custom-checkbox" aria-label="Toggle completion" title="${task.completed ? 'Mark incomplete' : 'Mark complete'}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
@@ -988,17 +1101,17 @@ class TaskFlowApp {
 
         <div class="task-content">
           <div class="task-header-row">
-            <span class="task-title">${this.escapeHTML(task.title)}</span>
+            <span class="task-title">${this.escapeHTML(task.title || 'Untitled Task')}</span>
           </div>
 
           ${task.description ? `<p class="task-desc">${this.escapeHTML(task.description)}</p>` : ''}
 
           <div class="task-meta">
-            <span class="badge badge-priority-${task.priority.toLowerCase()}">
-              ${task.priority} Priority
+            <span class="badge badge-priority-${prioritySafe}">
+              ${task.priority || 'Medium'} Priority
             </span>
             <span class="badge badge-category">
-              ${categoryIcons[task.category] || task.category || 'Task'}
+              ${categorySafe}
             </span>
             ${dueDateHtml}
             ${alarmTimeHtml}
@@ -1006,13 +1119,13 @@ class TaskFlowApp {
         </div>
 
         <div class="task-actions">
-          <button class="action-btn edit-btn" aria-label="Edit task" title="Edit Task">
+          <button type="button" class="action-btn edit-btn" aria-label="Edit task" title="Edit Task">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
-          <button class="action-btn delete-btn" aria-label="Delete task" title="Delete Task">
+          <button type="button" class="action-btn delete-btn" aria-label="Delete task" title="Delete Task">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -1023,10 +1136,14 @@ class TaskFlowApp {
 
       // Event Listeners for Task Card
       const checkbox = li.querySelector('.custom-checkbox');
-      checkbox.addEventListener('click', () => this.toggleTaskCompletion(task.id));
+      if (checkbox) {
+        checkbox.addEventListener('click', () => this.toggleTaskCompletion(task.id));
+      }
 
       const editBtn = li.querySelector('.edit-btn');
-      editBtn.addEventListener('click', () => this.openEditModal(task.id));
+      if (editBtn) {
+        editBtn.addEventListener('click', () => this.openEditModal(task.id));
+      }
 
       const alarmTag = li.querySelector('.alarm-tag');
       if (alarmTag) {
@@ -1037,7 +1154,9 @@ class TaskFlowApp {
       }
 
       const deleteBtn = li.querySelector('.delete-btn');
-      deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
+      }
 
       this.taskList.appendChild(li);
     });
@@ -1048,7 +1167,7 @@ class TaskFlowApp {
      ------------------------------------------------------------------------ */
   escapeHTML(str) {
     if (!str) return '';
-    return str
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -1057,6 +1176,7 @@ class TaskFlowApp {
   }
 
   showToast(message, type = 'info') {
+    if (!this.toastContainer) return;
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
 

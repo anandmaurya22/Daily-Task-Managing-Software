@@ -172,6 +172,7 @@ class TaskFlowApp {
 
     // Task Form & Alarm
     this.taskForm = document.getElementById('taskForm');
+    this.submitBtn = document.getElementById('submitBtn');
     this.taskTitle = document.getElementById('taskTitle');
     this.taskDesc = document.getElementById('taskDesc');
     this.taskCategory = document.getElementById('taskCategory');
@@ -254,7 +255,12 @@ class TaskFlowApp {
     this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
 
     // Task Submission
-    this.taskForm.addEventListener('submit', (e) => this.handleAddTask(e));
+    if (this.taskForm) {
+      this.taskForm.addEventListener('submit', (e) => this.handleAddTask(e));
+    }
+    if (this.submitBtn) {
+      this.submitBtn.addEventListener('click', (e) => this.handleAddTask(e));
+    }
 
     // Search Input
     this.searchInput.addEventListener('input', (e) => {

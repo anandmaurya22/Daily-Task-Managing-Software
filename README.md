@@ -2,7 +2,7 @@
 
 A modern, responsive, single-page **Task & Productivity Dashboard** built with pure **Vanilla HTML5, CSS3, and JavaScript**. Features clean glassmorphism design, vibrant theme accents, a dynamic live digital clock, category management (including Online & Physical gaming/sports), status filters, and real-time productivity statistics.
 
-> 🚀 **Live Demo**: **[https://anandmaurya22.github.io/Task-Manage/](https://anandmaurya22.github.io/Task-Manage/)**  
+> 🚀 **Live Demo**: **[https://anandmaurya22.github.io/Task-Manage/](https://[anandmaurya22.github.io/Task-Manage/](https://github.com/anandmaurya22/Daily-Task-Managing-Software))**  
 > Anyone can click the link above to open and use the live application directly in their web browser!
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)

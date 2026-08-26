@@ -27,7 +27,12 @@
         </div>
         <div>
           <h1 class="app-title">TaskFlow</h1>
-          <p class="greeting-text" id="greetingText">Good morning! ☀️</p>
+          <p class="greeting-text">
+            <span id="greetingPrefix">Good morning,</span>
+            <span class="user-name-tag" id="userNameDisplay" title="Click to change your name">User</span>
+            <button class="edit-name-btn" id="editNameBtn" title="Edit your name" aria-label="Edit Name">✏️</button>
+            <span id="greetingEmoji">☀️</span>
+          </p>
         </div>
       </div>
 
@@ -329,6 +334,26 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" id="cancelEditBtn">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit User Name Modal -->
+  <div class="modal-overlay hidden" id="nameModalOverlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3>Personalize Your Profile</h3>
+        <button class="close-modal-btn" id="closeNameModalBtn">&times;</button>
+      </div>
+      <form id="nameForm">
+        <div class="form-group">
+          <label for="userNameInput">Your Name</label>
+          <input type="text" id="userNameInput" placeholder="Enter your name (e.g. Anand)" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="cancelNameBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Name</button>
         </div>
       </form>
     </div>

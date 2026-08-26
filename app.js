@@ -6,6 +6,7 @@ class TaskFlowApp {
   constructor() {
     // Initial State
     this.tasks = [];
+    this.userName = localStorage.getItem('taskflow_user_name') || 'Anand';
     this.currentFilter = 'all'; // 'all' | 'active' | 'completed'
     this.priorityFilter = 'all'; // 'all' | 'High' | 'Medium' | 'Low'
     this.categoryFilter = 'all'; // 'all' | 'Work' | 'Personal' | 'Study' | 'Health' | 'Finance' | 'Game (Online)' | 'Game (Physical)'
@@ -154,7 +155,10 @@ class TaskFlowApp {
      ------------------------------------------------------------------------ */
   cacheDOMElements() {
     // Header & Clock
-    this.greetingText = document.getElementById('greetingText');
+    this.greetingPrefix = document.getElementById('greetingPrefix');
+    this.userNameDisplay = document.getElementById('userNameDisplay');
+    this.greetingEmoji = document.getElementById('greetingEmoji');
+    this.editNameBtn = document.getElementById('editNameBtn');
     this.clockTime = document.getElementById('clockTime');
     this.clockDate = document.getElementById('clockDate');
     this.themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -202,6 +206,13 @@ class TaskFlowApp {
     this.editTaskDueDate = document.getElementById('editTaskDueDate');
     this.closeModalBtn = document.getElementById('closeModalBtn');
     this.cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    // Name Modal
+    this.nameModalOverlay = document.getElementById('nameModalOverlay');
+    this.nameForm = document.getElementById('nameForm');
+    this.userNameInput = document.getElementById('userNameInput');
+    this.closeNameModalBtn = document.getElementById('closeNameModalBtn');
+    this.cancelNameBtn = document.getElementById('cancelNameBtn');
 
     // Quotes & Toast
     this.quoteText = document.getElementById('quoteText');
@@ -278,10 +289,33 @@ class TaskFlowApp {
     });
     this.editTaskForm.addEventListener('submit', (e) => this.handleSaveEdit(e));
 
+    // Name Modal Events
+    if (this.userNameDisplay) {
+      this.userNameDisplay.addEventListener('click', () => this.openNameModal());
+    }
+    if (this.editNameBtn) {
+      this.editNameBtn.addEventListener('click', () => this.openNameModal());
+    }
+    if (this.closeNameModalBtn) {
+      this.closeNameModalBtn.addEventListener('click', () => this.closeNameModal());
+    }
+    if (this.cancelNameBtn) {
+      this.cancelNameBtn.addEventListener('click', () => this.closeNameModal());
+    }
+    if (this.nameModalOverlay) {
+      this.nameModalOverlay.addEventListener('click', (e) => {
+        if (e.target === this.nameModalOverlay) this.closeNameModal();
+      });
+    }
+    if (this.nameForm) {
+      this.nameForm.addEventListener('submit', (e) => this.handleSaveName(e));
+    }
+
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !this.editModalOverlay.classList.contains('hidden')) {
-        this.closeEditModal();
+      if (e.key === 'Escape') {
+        if (!this.editModalOverlay.classList.contains('hidden')) this.closeEditModal();
+        if (this.nameModalOverlay && !this.nameModalOverlay.classList.contains('hidden')) this.closeNameModal();
       }
     });
   }
@@ -314,22 +348,55 @@ class TaskFlowApp {
 
       // Greeting Logic based on hour
       const hour = now.getHours();
-      let greeting = 'Good day! 👋';
+      let prefix = 'Good day,';
+      let emoji = '👋';
+
       if (hour >= 5 && hour < 12) {
-        greeting = 'Good morning! ☀️';
+        prefix = 'Good morning,';
+        emoji = '☀️';
       } else if (hour >= 12 && hour < 17) {
-        greeting = 'Good afternoon! 🌤️';
+        prefix = 'Good afternoon,';
+        emoji = '🌤️';
       } else if (hour >= 17 && hour < 21) {
-        greeting = 'Good evening! 🌆';
+        prefix = 'Good evening,';
+        emoji = '🌆';
       } else {
-        greeting = 'Good night! 🌙';
+        prefix = 'Good night,';
+        emoji = '🌙';
       }
 
-      if (this.greetingText) this.greetingText.textContent = greeting;
+      if (this.greetingPrefix) this.greetingPrefix.textContent = prefix;
+      if (this.userNameDisplay) this.userNameDisplay.textContent = this.userName;
+      if (this.greetingEmoji) this.greetingEmoji.textContent = emoji;
     };
 
     updateTime();
     setInterval(updateTime, 1000);
+  }
+
+  /* ------------------------------------------------------------------------
+     User Name Personalization Modal
+     ------------------------------------------------------------------------ */
+  openNameModal() {
+    if (this.userNameInput) this.userNameInput.value = this.userName;
+    if (this.nameModalOverlay) this.nameModalOverlay.classList.remove('hidden');
+    if (this.userNameInput) this.userNameInput.focus();
+  }
+
+  closeNameModal() {
+    if (this.nameModalOverlay) this.nameModalOverlay.classList.add('hidden');
+  }
+
+  handleSaveName(e) {
+    e.preventDefault();
+    const newName = this.userNameInput.value.trim();
+    if (!newName) return;
+
+    this.userName = newName;
+    localStorage.setItem('taskflow_user_name', newName);
+    this.closeNameModal();
+    this.showToast(`Welcome, ${this.userName}! 🎉`, 'success');
+    this.startClock();
   }
 
   renderQuotes() {

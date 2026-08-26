@@ -36,8 +36,19 @@
         </div>
       </div>
 
-      <!-- Live Clock & Theme Switcher -->
+      <!-- Live Clock, Next Alarm & Theme Switcher -->
       <div class="header-actions">
+        <div class="next-alarm-badge hidden" id="headerNextAlarm" title="Upcoming Scheduled Alarm">
+          <span class="alarm-pulse-dot"></span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="13" r="8"></circle>
+            <polyline points="12 9 12 13 15 15"></polyline>
+            <path d="M5 3L2 6"></path>
+            <path d="M22 6L19 3"></path>
+          </svg>
+          <span id="headerNextAlarmText">Next: 06:00 PM</span>
+        </div>
+
         <div class="clock-badge">
           <div class="clock-time" id="clockTime">12:00:00 PM</div>
           <div class="clock-date" id="clockDate">Wednesday, Aug 26</div>
@@ -230,72 +241,102 @@
               </div>
             </div>
 
-            <div class="form-row alarm-settings-row">
-              <div class="form-group flex-1">
-                <label for="taskDueDate">Due Date</label>
-                <input type="date" id="taskDueDate">
-              </div>
-              <div class="form-group flex-1">
-                <label class="alarm-label" for="taskAlarmHour">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="label-alarm-icon">
-                    <circle cx="12" cy="13" r="8"></circle>
-                    <polyline points="12 9 12 13 15 15"></polyline>
-                    <path d="M5 3L2 6"></path>
-                    <path d="M22 6L19 3"></path>
-                  </svg>
-                  <span>Set Alarm Time</span>
-                </label>
-                <div class="custom-12hr-picker">
-                  <div class="picker-icon-badge" title="Alarm Clock">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="form-group">
+              <label for="taskDueDate">Due Date</label>
+              <input type="date" id="taskDueDate">
+            </div>
+
+            <!-- Smart Reminder Alarm Station -->
+            <div class="alarm-station-card">
+              <div class="alarm-station-header">
+                <div class="alarm-header-left">
+                  <div class="alarm-station-badge">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="station-alarm-icon">
                       <circle cx="12" cy="13" r="8"></circle>
                       <polyline points="12 9 12 13 15 15"></polyline>
                       <path d="M5 3L2 6"></path>
                       <path d="M22 6L19 3"></path>
                     </svg>
                   </div>
-                  <select id="taskAlarmHour" title="Select Hour (1 to 12)">
-                    <option value="">Hour</option>
-                    <option value="01">01</option>
-                    <option value="02">02</option>
-                    <option value="03">03</option>
-                    <option value="04">04</option>
-                    <option value="05">05</option>
-                    <option value="06">06</option>
-                    <option value="07">07</option>
-                    <option value="08">08</option>
-                    <option value="09">09</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                  </select>
-                  <span class="time-colon">:</span>
-                  <select id="taskAlarmMin" title="Select Minute (00 to 55)">
-                    <option value="00">00</option>
-                    <option value="05">05</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                    <option value="20">20</option>
-                    <option value="25">25</option>
-                    <option value="30">30</option>
-                    <option value="35">35</option>
-                    <option value="40">40</option>
-                    <option value="45">45</option>
-                    <option value="50">50</option>
-                    <option value="55">55</option>
-                  </select>
-                  <select id="taskAlarmAmpm" title="Select AM or PM">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
+                  <div>
+                    <div class="alarm-station-title">Task Reminder Alarm</div>
+                    <div class="alarm-station-subtitle" id="taskAlarmStatusText">Optional: Audio chime & notification</div>
+                  </div>
+                </div>
+                <button type="button" class="btn-clear-alarm" id="clearAlarmBtn" title="Clear alarm settings">Clear ✕</button>
+              </div>
+
+              <!-- Digital Time Display & Dropdowns -->
+              <div class="alarm-time-control-row">
+                <div class="digital-time-display">
+                  <div class="digital-select-wrapper">
+                    <label class="digital-sublabel" for="taskAlarmHour">HOUR</label>
+                    <select id="taskAlarmHour" class="digital-select" title="Select Hour (01 to 12)">
+                      <option value="">--</option>
+                      <option value="01">01</option>
+                      <option value="02">02</option>
+                      <option value="03">03</option>
+                      <option value="04">04</option>
+                      <option value="05">05</option>
+                      <option value="06">06</option>
+                      <option value="07">07</option>
+                      <option value="08">08</option>
+                      <option value="09">09</option>
+                      <option value="10">10</option>
+                      <option value="11">11</option>
+                      <option value="12">12</option>
+                    </select>
+                  </div>
+
+                  <span class="digital-colon">:</span>
+
+                  <div class="digital-select-wrapper">
+                    <label class="digital-sublabel" for="taskAlarmMin">MIN</label>
+                    <select id="taskAlarmMin" class="digital-select" title="Select Minute (00 to 55)">
+                      <option value="00">00</option>
+                      <option value="05">05</option>
+                      <option value="10">10</option>
+                      <option value="15">15</option>
+                      <option value="20">20</option>
+                      <option value="25">25</option>
+                      <option value="30">30</option>
+                      <option value="35">35</option>
+                      <option value="40">40</option>
+                      <option value="45">45</option>
+                      <option value="50">50</option>
+                      <option value="55">55</option>
+                    </select>
+                  </div>
+
+                  <div class="digital-select-wrapper">
+                    <label class="digital-sublabel" for="taskAlarmAmpm">PERIOD</label>
+                    <select id="taskAlarmAmpm" class="digital-select ampm-select" title="Select AM or PM">
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="form-group recurring-alarm-group">
-              <label class="checkbox-label" title="Enable to keep alarm set permanently every day without re-setting">
-                <input type="checkbox" id="taskPermanentAlarm">
-                <span>🔁 Repeat Daily (Permanent Alarm)</span>
+              <!-- Quick Time Presets -->
+              <div class="alarm-presets-row">
+                <span class="presets-label">⚡ Presets:</span>
+                <div class="preset-buttons">
+                  <button type="button" class="alarm-preset-btn" data-target="task" data-hour="08" data-min="00" data-ampm="AM">🌅 8 AM</button>
+                  <button type="button" class="alarm-preset-btn" data-target="task" data-hour="01" data-min="00" data-ampm="PM">☀️ 1 PM</button>
+                  <button type="button" class="alarm-preset-btn" data-target="task" data-hour="06" data-min="00" data-ampm="PM">🌆 6 PM</button>
+                  <button type="button" class="alarm-preset-btn" data-target="task" data-hour="09" data-min="00" data-ampm="PM">🌙 9 PM</button>
+                </div>
+              </div>
+
+              <!-- Daily Repeat Toggle -->
+              <label class="custom-toggle-label" title="Enable to keep this alarm ringing daily without having to reset it">
+                <input type="checkbox" id="taskPermanentAlarm" class="custom-toggle-input">
+                <span class="custom-toggle-slider"></span>
+                <span class="toggle-text">
+                  <span class="toggle-main-text">🔁 Repeat Daily Alarm</span>
+                  <span class="toggle-sub-text">Persistent alarm rings every day</span>
+                </span>
               </label>
             </div>
 
@@ -449,72 +490,102 @@
             </select>
           </div>
         </div>
-        <div class="form-row alarm-settings-row">
-          <div class="form-group flex-1">
-            <label for="editTaskDueDate">Due Date</label>
-            <input type="date" id="editTaskDueDate">
-          </div>
-          <div class="form-group flex-1">
-            <label class="alarm-label" for="editTaskAlarmHour">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="label-alarm-icon">
-                <circle cx="12" cy="13" r="8"></circle>
-                <polyline points="12 9 12 13 15 15"></polyline>
-                <path d="M5 3L2 6"></path>
-                <path d="M22 6L19 3"></path>
-              </svg>
-              <span>Set Alarm Time</span>
-            </label>
-            <div class="custom-12hr-picker">
-              <div class="picker-icon-badge" title="Alarm Clock">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="form-group">
+          <label for="editTaskDueDate">Due Date</label>
+          <input type="date" id="editTaskDueDate">
+        </div>
+
+        <!-- Smart Reminder Alarm Station (Edit Modal) -->
+        <div class="alarm-station-card">
+          <div class="alarm-station-header">
+            <div class="alarm-header-left">
+              <div class="alarm-station-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="station-alarm-icon">
                   <circle cx="12" cy="13" r="8"></circle>
                   <polyline points="12 9 12 13 15 15"></polyline>
                   <path d="M5 3L2 6"></path>
                   <path d="M22 6L19 3"></path>
                 </svg>
               </div>
-              <select id="editTaskAlarmHour" title="Select Hour (1 to 12)">
-                <option value="">Hour</option>
-                <option value="01">01</option>
-                <option value="02">02</option>
-                <option value="03">03</option>
-                <option value="04">04</option>
-                <option value="05">05</option>
-                <option value="06">06</option>
-                <option value="07">07</option>
-                <option value="08">08</option>
-                <option value="09">09</option>
-                <option value="10">10</option>
-                <option value="11">11</option>
-                <option value="12">12</option>
-              </select>
-              <span class="time-colon">:</span>
-              <select id="editTaskAlarmMin" title="Select Minute (00 to 55)">
-                <option value="00">00</option>
-                <option value="05">05</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-                <option value="25">25</option>
-                <option value="30">30</option>
-                <option value="35">35</option>
-                <option value="40">40</option>
-                <option value="45">45</option>
-                <option value="50">50</option>
-                <option value="55">55</option>
-              </select>
-              <select id="editTaskAlarmAmpm" title="Select AM or PM">
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
+              <div>
+                <div class="alarm-station-title">Task Reminder Alarm</div>
+                <div class="alarm-station-subtitle" id="editTaskAlarmStatusText">Optional: Audio chime & notification</div>
+              </div>
+            </div>
+            <button type="button" class="btn-clear-alarm" id="editClearAlarmBtn" title="Clear alarm settings">Clear ✕</button>
+          </div>
+
+          <!-- Digital Time Display & Dropdowns -->
+          <div class="alarm-time-control-row">
+            <div class="digital-time-display">
+              <div class="digital-select-wrapper">
+                <label class="digital-sublabel" for="editTaskAlarmHour">HOUR</label>
+                <select id="editTaskAlarmHour" class="digital-select" title="Select Hour (01 to 12)">
+                  <option value="">--</option>
+                  <option value="01">01</option>
+                  <option value="02">02</option>
+                  <option value="03">03</option>
+                  <option value="04">04</option>
+                  <option value="05">05</option>
+                  <option value="06">06</option>
+                  <option value="07">07</option>
+                  <option value="08">08</option>
+                  <option value="09">09</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                </select>
+              </div>
+
+              <span class="digital-colon">:</span>
+
+              <div class="digital-select-wrapper">
+                <label class="digital-sublabel" for="editTaskAlarmMin">MIN</label>
+                <select id="editTaskAlarmMin" class="digital-select" title="Select Minute (00 to 55)">
+                  <option value="00">00</option>
+                  <option value="05">05</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                  <option value="20">20</option>
+                  <option value="25">25</option>
+                  <option value="30">30</option>
+                  <option value="35">35</option>
+                  <option value="40">40</option>
+                  <option value="45">45</option>
+                  <option value="50">50</option>
+                  <option value="55">55</option>
+                </select>
+              </div>
+
+              <div class="digital-select-wrapper">
+                <label class="digital-sublabel" for="editTaskAlarmAmpm">PERIOD</label>
+                <select id="editTaskAlarmAmpm" class="digital-select ampm-select" title="Select AM or PM">
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="form-group recurring-alarm-group">
-          <label class="checkbox-label" title="Enable to keep alarm set permanently every day without re-setting">
-            <input type="checkbox" id="editTaskPermanentAlarm">
-            <span>🔁 Repeat Daily (Permanent Alarm)</span>
+          <!-- Quick Time Presets -->
+          <div class="alarm-presets-row">
+            <span class="presets-label">⚡ Presets:</span>
+            <div class="preset-buttons">
+              <button type="button" class="alarm-preset-btn" data-target="edit" data-hour="08" data-min="00" data-ampm="AM">🌅 8 AM</button>
+              <button type="button" class="alarm-preset-btn" data-target="edit" data-hour="01" data-min="00" data-ampm="PM">☀️ 1 PM</button>
+              <button type="button" class="alarm-preset-btn" data-target="edit" data-hour="06" data-min="00" data-ampm="PM">🌆 6 PM</button>
+              <button type="button" class="alarm-preset-btn" data-target="edit" data-hour="09" data-min="00" data-ampm="PM">🌙 9 PM</button>
+            </div>
+          </div>
+
+          <!-- Daily Repeat Toggle -->
+          <label class="custom-toggle-label" title="Enable to keep this alarm ringing daily without having to reset it">
+            <input type="checkbox" id="editTaskPermanentAlarm" class="custom-toggle-input">
+            <span class="custom-toggle-slider"></span>
+            <span class="toggle-text">
+              <span class="toggle-main-text">🔁 Repeat Daily Alarm</span>
+              <span class="toggle-sub-text">Persistent alarm rings every day</span>
+            </span>
           </label>
         </div>
         <div class="modal-actions">

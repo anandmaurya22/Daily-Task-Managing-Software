@@ -190,12 +190,15 @@ class TaskFlowApp {
      ------------------------------------------------------------------------ */
   cacheDOMElements() {
     // Header & Clock
+    // Header & Clock & Next Alarm
     this.greetingPrefix = document.getElementById('greetingPrefix');
     this.userNameDisplay = document.getElementById('userNameDisplay');
     this.greetingEmoji = document.getElementById('greetingEmoji');
     this.editNameBtn = document.getElementById('editNameBtn');
     this.clockTime = document.getElementById('clockTime');
     this.clockDate = document.getElementById('clockDate');
+    this.headerNextAlarm = document.getElementById('headerNextAlarm');
+    this.headerNextAlarmText = document.getElementById('headerNextAlarmText');
     this.themeToggleBtn = document.getElementById('themeToggleBtn');
 
     // Quick Stats
@@ -205,7 +208,7 @@ class TaskFlowApp {
     this.statProgressPct = document.getElementById('statProgressPct');
     this.progressBarFill = document.getElementById('progressBarFill');
 
-    // Task Form & Alarm
+    // Task Form & Alarm Station
     this.taskForm = document.getElementById('taskForm');
     this.submitBtn = document.getElementById('submitBtn');
     this.taskTitle = document.getElementById('taskTitle');
@@ -216,7 +219,11 @@ class TaskFlowApp {
     this.taskAlarmMin = document.getElementById('taskAlarmMin');
     this.taskAlarmAmpm = document.getElementById('taskAlarmAmpm');
     this.taskPermanentAlarm = document.getElementById('taskPermanentAlarm');
+    this.clearAlarmBtn = document.getElementById('clearAlarmBtn');
+    this.taskAlarmStatusText = document.getElementById('taskAlarmStatusText');
+    this.alarmStationCard = document.querySelector('#taskForm .alarm-station-card');
     this.suggestionChips = document.querySelectorAll('.chip-btn');
+    this.alarmPresetBtns = document.querySelectorAll('.alarm-preset-btn');
 
     // Controls
     this.searchInput = document.getElementById('searchInput');
@@ -236,7 +243,7 @@ class TaskFlowApp {
     this.emptyTitle = document.getElementById('emptyTitle');
     this.emptyDesc = document.getElementById('emptyDesc');
 
-    // Edit Modal
+    // Edit Modal & Alarm Station
     this.editModalOverlay = document.getElementById('editModalOverlay');
     this.editTaskForm = document.getElementById('editTaskForm');
     this.editTaskId = document.getElementById('editTaskId');
@@ -249,6 +256,9 @@ class TaskFlowApp {
     this.editTaskAlarmMin = document.getElementById('editTaskAlarmMin');
     this.editTaskAlarmAmpm = document.getElementById('editTaskAlarmAmpm');
     this.editTaskPermanentAlarm = document.getElementById('editTaskPermanentAlarm');
+    this.editClearAlarmBtn = document.getElementById('editClearAlarmBtn');
+    this.editTaskAlarmStatusText = document.getElementById('editTaskAlarmStatusText');
+    this.editAlarmStationCard = document.querySelector('#editTaskForm .alarm-station-card');
     this.closeModalBtn = document.getElementById('closeModalBtn');
     this.cancelEditBtn = document.getElementById('cancelEditBtn');
 
@@ -448,6 +458,64 @@ class TaskFlowApp {
       });
     }
 
+    // Alarm Presets (Quick Set)
+    if (this.alarmPresetBtns) {
+      this.alarmPresetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          const h = btn.dataset.hour;
+          const m = btn.dataset.min;
+          const ampm = btn.dataset.ampm;
+          if (target === 'task') {
+            if (this.taskAlarmHour) this.taskAlarmHour.value = h;
+            if (this.taskAlarmMin) this.taskAlarmMin.value = m;
+            if (this.taskAlarmAmpm) this.taskAlarmAmpm.value = ampm;
+            this.updateAlarmStationStatus('task');
+          } else if (target === 'edit') {
+            if (this.editTaskAlarmHour) this.editTaskAlarmHour.value = h;
+            if (this.editTaskAlarmMin) this.editTaskAlarmMin.value = m;
+            if (this.editTaskAlarmAmpm) this.editTaskAlarmAmpm.value = ampm;
+            this.updateAlarmStationStatus('edit');
+          }
+          this.showToast(`Alarm set to ${h}:${m} ${ampm} 🔔`, 'info');
+        });
+      });
+    }
+
+    // Clear Alarm Buttons
+    if (this.clearAlarmBtn) {
+      this.clearAlarmBtn.addEventListener('click', () => {
+        if (this.taskAlarmHour) this.taskAlarmHour.value = '';
+        if (this.taskAlarmMin) this.taskAlarmMin.value = '00';
+        if (this.taskAlarmAmpm) this.taskAlarmAmpm.value = 'AM';
+        if (this.taskPermanentAlarm) this.taskPermanentAlarm.checked = false;
+        this.updateAlarmStationStatus('task');
+        this.showToast('Alarm removed for this task', 'info');
+      });
+    }
+
+    if (this.editClearAlarmBtn) {
+      this.editClearAlarmBtn.addEventListener('click', () => {
+        if (this.editTaskAlarmHour) this.editTaskAlarmHour.value = '';
+        if (this.editTaskAlarmMin) this.editTaskAlarmMin.value = '00';
+        if (this.editTaskAlarmAmpm) this.editTaskAlarmAmpm.value = 'AM';
+        if (this.editTaskPermanentAlarm) this.editTaskPermanentAlarm.checked = false;
+        this.updateAlarmStationStatus('edit');
+        this.showToast('Alarm removed', 'info');
+      });
+    }
+
+    // Dropdown change listeners to live-update alarm status
+    if (this.taskAlarmHour) this.taskAlarmHour.addEventListener('change', () => this.updateAlarmStationStatus('task'));
+    if (this.taskAlarmMin) this.taskAlarmMin.addEventListener('change', () => this.updateAlarmStationStatus('task'));
+    if (this.taskAlarmAmpm) this.taskAlarmAmpm.addEventListener('change', () => this.updateAlarmStationStatus('task'));
+    if (this.taskPermanentAlarm) this.taskPermanentAlarm.addEventListener('change', () => this.updateAlarmStationStatus('task'));
+
+    if (this.editTaskAlarmHour) this.editTaskAlarmHour.addEventListener('change', () => this.updateAlarmStationStatus('edit'));
+    if (this.editTaskAlarmMin) this.editTaskAlarmMin.addEventListener('change', () => this.updateAlarmStationStatus('edit'));
+    if (this.editTaskAlarmAmpm) this.editTaskAlarmAmpm.addEventListener('change', () => this.updateAlarmStationStatus('edit'));
+    if (this.editTaskPermanentAlarm) this.editTaskPermanentAlarm.addEventListener('change', () => this.updateAlarmStationStatus('edit'));
+
     // Alarm Modal Events
     if (this.dismissAlarmBtn) {
       this.dismissAlarmBtn.addEventListener('click', () => {
@@ -535,6 +603,97 @@ class TaskFlowApp {
 
     updateTime();
     this.clockInterval = setInterval(updateTime, 1000);
+  }
+
+  /* ------------------------------------------------------------------------
+     Alarm Station Visual State Management & Header Next Alarm
+     ------------------------------------------------------------------------ */
+  updateAlarmStationStatus(mode = 'task') {
+    if (mode === 'task') {
+      const hour = this.taskAlarmHour ? this.taskAlarmHour.value : '';
+      const min = this.taskAlarmMin ? this.taskAlarmMin.value : '00';
+      const ampm = this.taskAlarmAmpm ? this.taskAlarmAmpm.value : 'AM';
+      const isPermanent = this.taskPermanentAlarm ? this.taskPermanentAlarm.checked : false;
+
+      if (hour) {
+        const timeStr = `${hour}:${min} ${ampm}`;
+        if (this.alarmStationCard) this.alarmStationCard.classList.add('active-alarm');
+        if (this.taskAlarmStatusText) {
+          this.taskAlarmStatusText.textContent = `🔔 Active: Rings at ${timeStr} ${isPermanent ? '(Daily)' : ''}`;
+        }
+      } else {
+        if (this.alarmStationCard) this.alarmStationCard.classList.remove('active-alarm');
+        if (this.taskAlarmStatusText) {
+          this.taskAlarmStatusText.textContent = 'Optional: Audio chime & notification';
+        }
+      }
+    } else if (mode === 'edit') {
+      const hour = this.editTaskAlarmHour ? this.editTaskAlarmHour.value : '';
+      const min = this.editTaskAlarmMin ? this.editTaskAlarmMin.value : '00';
+      const ampm = this.editTaskAlarmAmpm ? this.editTaskAlarmAmpm.value : 'AM';
+      const isPermanent = this.editTaskPermanentAlarm ? this.editTaskPermanentAlarm.checked : false;
+
+      if (hour) {
+        const timeStr = `${hour}:${min} ${ampm}`;
+        if (this.editAlarmStationCard) this.editAlarmStationCard.classList.add('active-alarm');
+        if (this.editTaskAlarmStatusText) {
+          this.editTaskAlarmStatusText.textContent = `🔔 Active: Rings at ${timeStr} ${isPermanent ? '(Daily)' : ''}`;
+        }
+      } else {
+        if (this.editAlarmStationCard) this.editAlarmStationCard.classList.remove('active-alarm');
+        if (this.editTaskAlarmStatusText) {
+          this.editTaskAlarmStatusText.textContent = 'Optional: Audio chime & notification';
+        }
+      }
+    }
+  }
+
+  updateHeaderNextAlarm() {
+    if (!this.headerNextAlarm || !this.headerNextAlarmText) return;
+
+    const activeTasksWithAlarm = this.tasks.filter(t => !t.completed && t.alarmTime);
+    if (activeTasksWithAlarm.length === 0) {
+      this.headerNextAlarm.classList.add('hidden');
+      return;
+    }
+
+    // Convert 12hr strings (e.g. "06:00 PM") to minutes from midnight to sort accurately
+    const parse12HrToMinutes = (timeStr) => {
+      if (!timeStr) return 9999;
+      const parts = timeStr.split(' ');
+      if (parts.length < 2) return 9999;
+      const [hStr, mStr] = parts[0].split(':');
+      let h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10) || 0;
+      const isPM = parts[1].toUpperCase() === 'PM';
+      if (isPM && h !== 12) h += 12;
+      if (!isPM && h === 12) h = 0;
+      return h * 60 + m;
+    };
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let nextTask = null;
+    let minDiff = Infinity;
+
+    activeTasksWithAlarm.forEach(t => {
+      const taskMinutes = parse12HrToMinutes(t.alarmTime);
+      let diff = taskMinutes - currentMinutes;
+      if (diff < 0) diff += 1440; // scheduled for tomorrow
+      if (diff < minDiff) {
+        minDiff = diff;
+        nextTask = t;
+      }
+    });
+
+    if (nextTask) {
+      this.headerNextAlarm.classList.remove('hidden');
+      const titleSnippet = nextTask.title.length > 18 ? nextTask.title.substring(0, 18) + '...' : nextTask.title;
+      this.headerNextAlarmText.textContent = `Next: ${nextTask.alarmTime} (${titleSnippet})`;
+    } else {
+      this.headerNextAlarm.classList.add('hidden');
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -775,6 +934,8 @@ class TaskFlowApp {
       this.editTaskPermanentAlarm.checked = !!task.isPermanent;
     }
 
+    this.updateAlarmStationStatus('edit');
+
     if (this.editModalOverlay) {
       this.editModalOverlay.classList.remove('hidden');
     }
@@ -882,6 +1043,8 @@ class TaskFlowApp {
   render() {
     this.updateStats();
     this.updateDailyMonitor();
+    this.updateHeaderNextAlarm();
+    this.updateAlarmStationStatus('task');
     this.renderTaskList();
   }
 
